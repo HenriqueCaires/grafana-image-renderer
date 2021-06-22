@@ -134,7 +134,7 @@ export class Browser {
 
     return launcherOptions;
   }
-  
+
   async setTimezone(page, options) {
     const timezone = options.timezone || this.config.timezone;
     if (timezone) {
@@ -166,17 +166,29 @@ export class Browser {
       this.validateImageOptions(options);
       const launcherOptions = this.getLauncherOptions(options);
       browser = await puppeteer.launch(launcherOptions);
+
+      browser.on('disconnected', async () => {
+        if (browser && browser.process() != null) {
+          this.log.debug('Kiling browser process');
+          browser.process().kill('SIGINT');
+        }
+      });
+
       page = await browser.newPage();
       this.addPageListeners(page);
 
       return await this.takeScreenshot(page, options);
     } finally {
       if (page) {
+        this.log.debug('Closing page');
         this.removePageListeners(page);
         await page.close();
+        this.log.debug('Page closed');
       }
       if (browser) {
+        this.log.debug('Closing browser');
         await browser.close();
+        this.log.debug('Browser closed');
       }
     }
   }
@@ -264,7 +276,7 @@ export class Browser {
   async exportCSV(page: any, options: any): Promise<RenderCSVResponse> {
     await this.preparePage(page, options);
     await this.setTimezone(page, options);
-    
+
     const downloadPath = uniqueFilename(os.tmpdir());
     fs.mkdirSync(downloadPath);
     const watcher = chokidar.watch(downloadPath);
