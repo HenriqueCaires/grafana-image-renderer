@@ -178,11 +178,8 @@ export class Browser {
       }
       if (browser) {
         await browser.close();
-        if (browser.process() != null) {
-          browser.process().kill('SIGKILL');
-        }
       }
-      //exec('pkill chrome');
+      exec('pkill chrome');
     }
   }
 
