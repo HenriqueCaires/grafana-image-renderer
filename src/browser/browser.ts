@@ -4,6 +4,7 @@ import * as puppeteer from 'puppeteer';
 import * as chokidar from 'chokidar';
 import * as path from 'path';
 import * as fs from 'fs';
+import { exec } from 'child_process';
 import { Logger } from '../logger';
 import { RenderingConfig } from '../config';
 
@@ -166,30 +167,19 @@ export class Browser {
       this.validateImageOptions(options);
       const launcherOptions = this.getLauncherOptions(options);
       browser = await puppeteer.launch(launcherOptions);
-
-      browser.on('disconnected', async () => {
-        if (browser && browser.process() != null) {
-          this.log.debug('Kiling browser process');
-          browser.process().kill('SIGINT');
-        }
-      });
-
       page = await browser.newPage();
       this.addPageListeners(page);
 
       return await this.takeScreenshot(page, options);
     } finally {
       if (page) {
-        this.log.debug('Closing page');
         this.removePageListeners(page);
         await page.close();
-        this.log.debug('Page closed');
       }
       if (browser) {
-        this.log.debug('Closing browser');
         await browser.close();
-        this.log.debug('Browser closed');
       }
+      exec('pkill chrome');
     }
   }
 
